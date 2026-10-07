@@ -4,7 +4,7 @@
 
 This document is the implementation handoff for Vector Notepad. It records the product and architecture decisions agreed during design so another agent can continue without repeating discovery or product interviews.
 
-Status: **design agreed; implementation intentionally not started**.
+Status: **design agreed; initial SQLite-backed note capture implemented; milestone one remains in progress**.
 
 The original seed idea and early Chroma notes remain in `doc/plan.md`. This document supersedes that file as the detailed product and implementation direction.
 
@@ -14,19 +14,22 @@ The original seed idea and early Chroma notes remain in `doc/plan.md`. This docu
 - Read `docs/agents/issue-tracker.md` before publishing tickets or specs.
 - Read `docs/agents/triage-labels.md` before applying issue labels.
 - Read `docs/agents/domain.md` before adding glossary entries or ADRs.
-- Preserve unrelated worktree changes. At the time of this handoff, the agent configuration files and this document may still be uncommitted.
+- Preserve unrelated worktree changes. Inspect the current worktree rather than assuming this handoff describes its Git status.
 
 ## Current repository state
 
-The repository is effectively an unmodified NestJS 11 starter.
+The repository uses npm workspaces with a NestJS 11 application in `apps/api`.
 
-- The only API is `GET /`, returning `Hello World!`.
-- There is no note domain model, persistence, Chroma integration, application UI, authentication, or Docker Compose configuration.
-- `chromadb` and `@chroma-core/default-embed` are installed but unused.
-- Existing tests cover only the NestJS starter response.
-- The planned workspace conversion has not happened yet.
+- `POST /api/notes` creates body-only notes; `GET /api/notes` lists the 20 most recently updated active notes.
+- SQLite persistence uses `better-sqlite3`, explicit SQL migrations, UUID identifiers, UTC timestamps, and an initial note version of 1.
+- Creating a note atomically stores pending semantic upsert work in a durable SQLite outbox. No worker consumes this work yet.
+- Validation rejects non-string and whitespace-only bodies, preserves accepted text, and limits JSON requests to 1 MiB.
+- OpenAPI documentation is available at `/api/docs` and `/api/docs-json`.
+- Tests cover note validation, repository persistence and transaction behavior, and the HTTP capture/list API.
+- FTS5, semantic indexing, embeddings, search, update/conflict handling, Trash, the frontend, and Docker Compose configurations remain unimplemented.
+- Chroma-related dependencies remain unused in the root package; their presence does not indicate an operational integration.
 
-Do not treat the current starter structure as an architectural commitment. The agreed structure is described below.
+The API defaults to localhost. See `README.md` for current commands and persistence configuration. The architecture below describes the full target, not a claim that all capabilities already exist.
 
 ## Product vision
 
@@ -139,7 +142,7 @@ The frontend is a separate React/Vite application.
 
 ## Target repository structure
 
-Convert the repository to npm workspaces while implementation is still small.
+The npm workspace conversion and `apps/api` move are complete. The remaining target structure is:
 
 ```text
 /
@@ -409,13 +412,13 @@ Milestone one is complete when all of the following are true:
 
 ## Suggested implementation sequence
 
-This order uses vertical slices while establishing the risky infrastructure early:
+This sequence describes the target work, with completed foundations marked explicitly. Follow the ticket-first workflow in `AGENTS.md` before actioning any remaining slice:
 
-1. Convert the repository to npm workspaces and move the NestJS starter into `apps/api`.
+1. Convert the repository to npm workspaces and move the NestJS starter into `apps/api`. **Complete.**
 2. Add `apps/web`, shared root scripts, and development/production Compose skeletons.
-3. Define the note domain behavior and capability-oriented ports.
-4. Implement SQLite migrations, `NoteRepository`, FTS5, and durable outbox behavior with integration tests.
-5. Expose note CRUD, recent notes, Trash, restore, permanent deletion, and conflict responses through REST/OpenAPI.
+3. Define the note domain behavior and capability-oriented ports. **Capture/list behavior and the initial repository port exist; remaining lifecycle and semantic capabilities are pending.**
+4. Implement SQLite migrations, `NoteRepository`, FTS5, and durable outbox behavior with integration tests. **Migrations, capture/list persistence, and atomic outbox production exist; FTS5 and remaining operations are pending.**
+5. Expose note CRUD, recent notes, Trash, restore, permanent deletion, and conflict responses through REST/OpenAPI. **Create, recent notes, and OpenAPI exist; remaining endpoints are pending.**
 6. Implement paragraph-aware chunking and the local `EmbeddingProvider`.
 7. Implement the Chroma `SemanticNoteIndex`, retry worker, and index-state reporting.
 8. Implement hybrid retrieval and RRF with deterministic tests.
@@ -423,7 +426,7 @@ This order uses vertical slices while establishing the risky infrastructure earl
 10. Add model-baking, production network restrictions, persistent mounts, and offline-runtime verification.
 11. Add focused Playwright coverage and complete operating documentation.
 
-Before executing this as one large change, prefer breaking it into tracer-bullet tickets with explicit blocking relationships.
+Break remaining work into small GitHub tickets with explicit blocking relationships before implementation, and deliver completed tasks through PRs as required by `AGENTS.md`.
 
 ## Implementation-level choices still open
 
@@ -453,4 +456,4 @@ Escalate only choices that would alter product behavior, privacy, data durabilit
 
 ## Instruction for the next session
 
-Do not begin implementation merely because this document exists. First confirm what unit of work the user wants to start, then create or select the corresponding issue. Treat this document as the authoritative overview unless the user explicitly changes a decision.
+Do not begin implementation merely because this document exists. First confirm what unit of work the user wants to start, then follow the ticket-first delivery workflow in `AGENTS.md`. Treat this document as the authoritative product and architecture overview unless the user explicitly changes a decision; inspect code and current verification results for implementation status.
