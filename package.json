@@ -4,20 +4,23 @@
   "description": "",
   "author": "",
   "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start",
-    "start:dev": "nest start --watch",
-    "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "build": "npm run build --workspace @vector-notepad/api",
+    "format": "prettier --write \"apps/**/*.ts\"",
+    "start": "npm run start --workspace @vector-notepad/api",
+    "start:dev": "npm run start:dev --workspace @vector-notepad/api",
+    "start:debug": "npm run start:debug --workspace @vector-notepad/api",
+    "start:prod": "npm run start:prod --workspace @vector-notepad/api",
+    "lint": "eslint \"apps/api/{src,test}/**/*.ts\" --fix",
+    "test": "npm test --workspace @vector-notepad/api",
+    "test:watch": "npm run test:watch --workspace @vector-notepad/api",
+    "test:cov": "npm run test:cov --workspace @vector-notepad/api",
+    "test:debug": "npm run test:debug --workspace @vector-notepad/api",
+    "test:e2e": "npm run test:e2e --workspace @vector-notepad/api"
   },
   "dependencies": {
     "@chroma-core/default-embed": "^0.1.9",
@@ -52,22 +55,5 @@
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
   }
 }
